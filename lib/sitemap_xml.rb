@@ -52,7 +52,8 @@ module SitemapXml
       end
       
       static_actions.each do |action|
-        self.sitemapped_actions << {:controller => self.controller_path, :action => action}
+        url = {:controller => self.controller_path, :action => action, :only_path => false}
+        self.sitemapped_actions << {:url => url}
       end
       
       if options.has_key?(:obj_required)
@@ -74,7 +75,10 @@ module SitemapXml
         objects = model.find(:all, :conditions => options[:conditions])
         dynamic_actions.each do |action|
           objects.each do |obj|
-            self.sitemapped_actions << {:controller => self.controller_path, :action => action, column => obj.send(column)}
+            url = {:controller => self.controller_path, :action => action, column => obj.send(column), :only_path => false}
+            new_action = {:url => url}
+            new_action.merge({:lastmod => obj.updated_at.utc.strftime("%Y-%m-%dT%H:%M:%S+00:00")}) if obj.respond_to?(:updated_at)
+            self.sitemapped_actions << new_action
           end
         end
       end
