@@ -1,28 +1,41 @@
-SitemapXml
-==========
+= SitemapXml
 
-SitemapXml is a simple plugin for generating XML sitemaps which can be
+v0.1 - March 9, 2009
+
+SitemapXml is a simple plugin for generating XML Sitemaps which can be
 submitted to search engines. For more information on the Sitemap protocol,
-visit http://sitemaps.org. 
+visit http://sitemaps.org.
+
+== Installation
+
+Install the plugin from github:
+	
+	ruby script/plugin install git://github.com/tylercunnion/sitemap_xml.git
 
 To include a Sitemap in your app, first run the generator:
 
-<tt>script/generate sitemap</tt>
+	script/generate sitemap
 
 This will install the SitemapController and the Sitemap view. Then add a route
 for sitemap.xml to your config/routes.rb:
 
-<tt>map.sitemap 'sitemap.xml', :controller => "sitemap", :action => "index", :format => "xml"</tt>
+	map.sitemap 'sitemap.xml', :controller => "sitemap", :action => "index", :format => "xml"
 
-Now the plugin is ready to use. At the bottom of each controller you want to
-include in the map, call the +enable_sitemap+ method. Check the documentation
-for +enable_sitemap+ for the available options.
+== Usage
 
-Restrictions
-============
+The SitemapXml module needs to be included in every controller you want to map.
+The easiest way to do this is to include SitemapXml in ApplicationController.
+Alternatively, you could include SitemapXml in each individual controller.
+At the bottom of each controller you want to include in the map, call the
+enable_sitemap method. Please note that it must come *after* the controller's
+actions, or else it will not work. There are many options for enable_sitemap,
+check the documentation (+rake doc:plugins+) for a complete list.
+
+== Restrictions
 
 Please note the restrictions on Sitemap size: all maps must be less than 10MB
 and contain 50,000 or fewer URIs. For an app of that size I recommend a custom
 solution rather than this plugin.
+
 
 Copyright (c) 2009 Tyler M Cunnion, released under the MIT license
