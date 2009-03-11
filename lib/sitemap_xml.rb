@@ -75,7 +75,7 @@ module SitemapXml
         unless options.has_key?(:model)
           model = Object.const_get(self.controller_name.capitalize.singularize)
         else
-          model = Object.const_get(options[:model])
+          model = Object.const_get(options[:model].capitalize)
         end
         
         unless options.has_key?(:obj_key)
