@@ -1,6 +1,6 @@
 = SitemapXml
 
-v0.1 - March 9, 2009
+v0.2 - March 10, 2009
 
 SitemapXml is a simple plugin for generating XML Sitemaps which can be
 submitted to search engines. For more information on the Sitemap protocol,
