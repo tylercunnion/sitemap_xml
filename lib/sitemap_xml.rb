@@ -11,19 +11,19 @@ module SitemapXml
   module SitemapClassMethods
   
     # Add this method to the end of your controller to enable it for
-    # sitemapping. It <strong>must</strong> be below all the actions in your
+    # sitemapping. It must be below all the actions in your
     # controller or the system cannot detect them.
     #
     # If your controller is RESTful, then mapping is easy. For an automatic map
-    # of the +index+ and +show+ actions, call +enable_sitemap+ with +:resource+
+    # of the <tt>index</tt> and <tt>show</tt> actions, call <tt>enable_sitemap</tt> with <tt>:resource</tt>
     # as your first argument. You may still use the parameters below to modify
     # your mapping arrangement.
     #
     #
     # ==== Parameters
-    # * +:only+ - Will only include the specified actions in the map. Cannot be
-    #   used with +:resource+.
-    # * +:except+ - Will map all actions except the specified ones.
+    # * <tt>:only</tt> - Will only include the specified actions in the map. Cannot be
+    #   used with <tt>:resource</tt>.
+    # * <tt>:except</tt> - Will map all actions except the specified ones.
     # * <tt>:include</tt> - Includes the given actions in the map. This method
     #   bypasses the normal checks on method existence -- use it when you have
     #   a view-only page with no corresponding method in the controller;
@@ -31,7 +31,7 @@ module SitemapXml
     # * <tt>:obj_required</tt> - Use this option when certain actions need an id.
     # * <tt>:model</tt> - Specify the model name when it does not match
     #   the controller's name.
-    # * <tt>:obj_key</tt> - Use with <tt>:obj_required</tt>. If you need a
+    # * <tt>:obj_key</tt> - Use with <tt>:obj_required+. If you need a
     #   column other than <tt>id</tt>, you can set it here.
     # * <tt>:conditions</tt> - By default, <tt>:obj_required</tt> will perform
     #   find(:all). You may pass in conditions in the same format as find() to
@@ -39,7 +39,7 @@ module SitemapXml
     #
     # ==== Examples
     #   enable_sitemap :only => ["index, show"], :obj_required => ["show"]
-    #   enable_sitemap :except => ["destroy, edit"], :obj_required => ["show"], :model => "Person"
+    #   enable_sitemap :except => ["destroy, edit"], :obj_required => ["show"], :model => "person"
     #   enable_sitemap :obj_required => ["show"], :conditions => ["public = true"]
     #   enable_sitemap :resource, :include => ["some_other_method"]
     def enable_sitemap(*args)
