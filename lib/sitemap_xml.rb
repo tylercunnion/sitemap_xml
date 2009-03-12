@@ -3,15 +3,13 @@
 module SitemapXml
   protected
   def self.included(klass)
-    klass.send :class_inheritable_array, :sitemapped_actions
     klass.send :extend, SitemapClassMethods
-    klass.send :sitemapped_actions=, []
   end
   
   module SitemapClassMethods
   
     # Add this method to the end of your controller to enable it for
-    # sitemapping. It <strong>must</strong> be below all the actions in your
+    # sitemapping. It must be below all the actions in your
     # controller or the system cannot detect them.
     #
     # ==== Parameters
@@ -35,54 +33,61 @@ module SitemapXml
     #   enable_sitemap :except => ["destroy, edit"], :obj_required => ["show"], :model => "Person"
     #   enable_sitemap :obj_required => ["show"], :conditions => ["public = true"]
     def enable_sitemap(options={})
-      options.to_options!
-      options.assert_valid_keys(:only, :except, :include, :obj_required, :model, :obj_key, :conditions)
+      if Sitemap.instance.mapped_actions[self.name.intern].blank?
+        sitemapped_actions = []
+        options.to_options!
+        options.assert_valid_keys(:only, :except, :include, :obj_required, :model, :obj_key, :conditions)
           
-      base_actions = self.public_instance_methods(false)
-      map_actions = base_actions
+        base_actions = self.public_instance_methods(false)
+        map_actions = base_actions
     
-      map_actions = options[:only] & map_actions if options.has_key?(:only)
-      map_actions = map_actions - options[:except] if options.has_key?(:except)
-      map_actions = map_actions + options[:include] if options.has_key?(:include)
+        map_actions = options[:only] & map_actions if options.has_key?(:only)
+        map_actions = map_actions - options[:except] if options.has_key?(:except)
+        map_actions = map_actions + options[:include] if options.has_key?(:include)
       
-      if options.has_key?(:obj_required)
-        static_actions = map_actions - options[:obj_required]
-      else
-        static_actions = map_actions
-      end
-      
-      static_actions.each do |action|
-        url = {:controller => self.controller_path, :action => action, :only_path => false}
-        self.sitemapped_actions << {:url => url}
-      end
-      
-      if options.has_key?(:obj_required)
-        unless options.has_key?(:model)
-          model = Object.const_get(self.controller_name.capitalize.singularize)
+        if options.has_key?(:obj_required)
+          static_actions = map_actions - options[:obj_required]
         else
-          model = Object.const_get(options[:model])
+          static_actions = map_actions
         end
-        
-        unless options.has_key?(:obj_key)
-          column = "id"
-        else
-          column = options[:obj_key]
+      
+        static_actions.each do |action|
+          url = {:controller => self.controller_path, :action => action, :only_path => false}
+          sitemapped_actions << {:url => url}
         end
-        
-        column = column.intern
-        
-        dynamic_actions = options[:obj_required] & map_actions
-        objects = model.find(:all, :conditions => options[:conditions])
-        dynamic_actions.each do |action|
-          objects.each do |obj|
-            url = {:controller => self.controller_path, :action => action, column => obj.send(column), :only_path => false}
-            new_action = {:url => url}
-            new_action.merge({:lastmod => obj.updated_at.utc.strftime("%Y-%m-%dT%H:%M:%S+00:00")}) if obj.respond_to?(:updated_at)
-            self.sitemapped_actions << new_action
+      
+        if options.has_key?(:obj_required)
+          unless options.has_key?(:model)
+            model = Object.const_get(self.controller_name.capitalize.singularize)
+          else
+            model = Object.const_get(options[:model])
           end
+        
+          unless options.has_key?(:obj_key)
+            column = "id"
+          else
+            column = options[:obj_key]
+          end
+        
+          column = column.intern
+        
+          dynamic_actions = options[:obj_required] & map_actions
+          objects = model.find(:all, :conditions => options[:conditions])
+          dynamic_actions.each do |action|
+            objects.each do |obj|
+              url = {:controller => self.controller_path, :action => action, column => obj.send(column), :only_path => false}
+              new_action = {:url => url}
+              new_action.merge({:lastmod => obj.updated_at.utc.strftime("%Y-%m-%dT%H:%M:%S+00:00")}) if obj.respond_to?(:updated_at)
+              sitemapped_actions << new_action
+            end #each
+          end #each
+        end #if obj_required
+        unless sitemapped_actions.empty?
+          Sitemap.instance.mapped_actions[self.name.intern] = sitemapped_actions
         end
       end
-    end
-  end
-end
+    end #enable_sitemap
+
+  end #module SitemapClassMethods
+end #module SitemapXml
   

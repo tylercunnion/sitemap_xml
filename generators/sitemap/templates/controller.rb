@@ -6,15 +6,11 @@ class SitemapController < ApplicationController
     find_files("#{RAILS_ROOT}/app/controllers")
 
     @files.each do |f|
-      begin
-        @actions = @actions + eval(f).sitemapped_actions 
-        # Memory?
-        eval(f).sitemapped_actions = []
-      rescue NoMethodError
-        nil
-      end
+      eval(f)
     end     
-    
+    Sitemap.instance.mapped_actions.each_value do |val|
+      @actions += val
+    end
   end
   
   private
