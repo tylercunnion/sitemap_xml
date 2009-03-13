@@ -19,91 +19,95 @@ module SitemapXml
     #
     #
     # ==== Parameters
-    # * <tt>:only</tt> - Will only include the specified actions in the map. Cannot be
-    #   used with <tt>:resource</tt>.
-    # * <tt>:except</tt> - Will map all actions except the specified ones.
-    # * <tt>:include</tt> - Includes the given actions in the map. This method
-    #   bypasses the normal checks on method existence -- use it when you have
-    #   a view-only page with no corresponding method in the controller;
-    #   this is the only way to make it appear in the list.
-    # * <tt>:obj_required</tt> - Use this option when certain actions need an id.
-    # * <tt>:model</tt> - Specify the model name when it does not match
-    #   the controller's name.
-    # * <tt>:obj_key</tt> - Use with <tt>:obj_required+. If you need a
-    #   column other than <tt>id</tt>, you can set it here.
-    # * <tt>:conditions</tt> - By default, <tt>:obj_required</tt> will perform
-    #   find(:all). You may pass in conditions in the same format as find() to
-    #   return only a subset of the objects.
-    #
-    # ==== Examples
-    #   enable_sitemap :only => ["index, show"], :obj_required => ["show"]
-    #   enable_sitemap :except => ["destroy, edit"], :obj_required => ["show"], :model => "person"
-    #   enable_sitemap :obj_required => ["show"], :conditions => ["public = true"]
-    #   enable_sitemap :resource, :include => ["some_other_method"]
-    def enable_sitemap(*args)
-      if Sitemap.instance.mapped_actions[self.name.intern].blank?
-        sitemapped_actions = []
-        options = args.extract_options!
-        valid_keys = [:only, :except, :include, :obj_required, :model, :obj_key, :conditions]
-        valid_keys = valid_keys - [:only] if args.first == :resource
-        options.assert_valid_keys(valid_keys)
-          
-        base_actions = self.public_instance_methods(false)
-        map_actions = base_actions
-    
 
-        if args.first == :resource
-          options[:only] = ["index", "show"]
-          options[:obj_required] = (options[:obj_required] << "show").uniq
-        end
-        
-        map_actions = options[:only] & map_actions if options.has_key?(:only)
-        map_actions = map_actions - options[:except] if options.has_key?(:except)
-        map_actions = map_actions + options[:include] if options.has_key?(:include)
+    def enable_sitemap(*args)
+      sitemapped_actions = []
+      options = args.extract_options!
+
+      possible_actions = self.public_instance_methods(false)
+
+
+      if args.first == :resource
+       valid_keys = [:except, :include, :dynamic, :model, :param, :conditions, :collection]
+       map_actions = ["index", "show"]
+      else
+       valid_keys = [:only, :except, :include, :dynamic, :model, :param, :conditions, :collection]
+       map_actions = possible_actions
+      end
+
+      options.assert_valid_keys(valid_keys)
+
+      if options.has_key?(:only)
+       map_actions = options[:only].to_a & possible_actions
+      else
+       map_actions -= options[:except].to_a if options.has_key?(:except)
+       map_actions += options[:include].to_a if options.has_key?(:include)
+      end
       
-        if options.has_key?(:obj_required)
-          static_actions = map_actions - options[:obj_required]
+      if options.has_key?(:dynamic)
+        logger.debug "Dynamic!"
+        unless options.has_key?(:model)
+          default_model = Object.const_get(self.controller_name.capitalize.singularize)
         else
-          static_actions = map_actions
+          default_model = Object.const_get(options[:model])
         end
-      
-        static_actions.each do |action|
-          url = {:controller => self.controller_path, :action => action, :only_path => false}
-          sitemapped_actions << {:url => url}
+        logger.debug "Default Model: " + default_model.name
+
+        default_conditions = options[:conditions]
+        
+        logger.debug "Default Conditions: " + default_conditions.inspect
+
+        if options.has_key?(:param)
+          default_param = options[:param]
+        else
+          default_param = :id
         end
-      
-        if options.has_key?(:obj_required)
-          unless options.has_key?(:model)
-            model = Object.const_get(self.controller_name.capitalize.singularize)
-          else
-            model = Object.const_get(options[:model].capitalize)
-          end
         
-          unless options.has_key?(:obj_key)
-            column = "id"
-          else
-            column = options[:obj_key]
-          end
+        logger.debug "Default Param: " + default_param.inspect
+
+        default_collection = options[:collection]
         
-          column = column.intern
+        logger.debug "Default Collection: " + default_collection.inspect
+
+        dynamics = []
         
-          dynamic_actions = options[:obj_required] & map_actions
-          objects = model.find(:all, :conditions => options[:conditions])
-          dynamic_actions.each do |action|
-            objects.each do |obj|
-              url = {:controller => self.controller_path, :action => action, column => obj.send(column), :only_path => false}
-              new_action = {:url => url}
-              new_action.merge({:lastmod => obj.updated_at.utc.strftime("%Y-%m-%dT%H:%M:%S+00:00")}) if obj.respond_to?(:updated_at)
-              sitemapped_actions << new_action
-            end #each
-          end #each
-        end #if obj_required
-        unless sitemapped_actions.empty?
-          Sitemap.instance.mapped_actions[self.name.intern] = sitemapped_actions
+        logger.debug "Options-Dynamic: " + options[:dynamic].inspect
+        logger.debug "Class of above: " + options[:dynamic].class.inspect
+        case options[:dynamic]
+          when Array:
+            dynamics += options[:dynamic]
+          when Hash, String, Symbol:
+            dynamics << options[:dynamic]
         end
+        
+        logger.debug "Dynamics: " + dynamics.inspect
+
+        default_objects = default_model.find(:all, :conditions => default_conditions)
+
+        scanner = SitemapScanner.new(:controller => self, :model => default_model, :conditions => default_conditions, :param => default_param, :collection => default_collection, :objects => default_objects)
+        
+                
+        dynamics.each do |d|
+          sitemapped_actions += scanner.scan(d)
+        end
+
+        static_actions = map_actions - scanner.names
+      else
+        static_actions = map_actions
+      end
+
+      static_actions.each do |action|
+        url = {:controller => self.controller_path, :action => action, :only_path => false}
+        sitemapped_actions << {:url => url}
+      end
+      logger.debug "Final: " + sitemapped_actions.inspect
+      unless sitemapped_actions.empty?
+        Sitemap.instance.mapped_actions[self.name.intern] = sitemapped_actions
       end
     end #enable_sitemap
 
+
+      
   end #module SitemapClassMethods
 end #module SitemapXml
   
