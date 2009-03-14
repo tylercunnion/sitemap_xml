@@ -1,6 +1,6 @@
 = SitemapXml
 
-v0.2 - March 10, 2009
+v0.3 - March 13, 2009
 
 SitemapXml is a simple plugin for generating XML Sitemaps which can be
 submitted to search engines. For more information on the Sitemap protocol,
@@ -29,7 +29,7 @@ Alternatively, you could include SitemapXml in each individual controller.
 At the bottom of each controller you want to include in the map, call the
 enable_sitemap method. Please note that it must come *after* the controller's
 actions, or else it will not work. There are many options for enable_sitemap,
-check the documentation (+rake doc:plugins+) for a complete list.
+check the documentation (rake doc:plugins) for a complete list.
 
 == Restrictions
 
