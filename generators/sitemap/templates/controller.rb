@@ -6,7 +6,8 @@ class SitemapController < ApplicationController
     find_files("#{RAILS_ROOT}/app/controllers")
 
     @files.each do |f|
-      eval(f)
+      ct = eval(f).new
+      ct.get_sitemap if ct.respond_to?(:get_sitemap)
     end     
     Sitemap.instance.mapped_actions.each_value do |val|
       @actions += val
