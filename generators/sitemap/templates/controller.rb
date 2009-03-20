@@ -1,17 +1,25 @@
 class SitemapController < ApplicationController
   def index
+    
     @files = []
     @actions = []
+    
+    unless ENV['RAILS_ENV'] == "production"
+      find_files("#{RAILS_ROOT}/app/controllers")
 
-    find_files("#{RAILS_ROOT}/app/controllers")
-
-    @files.each do |f|
-      ct = eval(f).new
-      ct.get_sitemap if ct.respond_to?(:get_sitemap)
-    end     
+      @files.each do |f|
+        eval(f)
+      end
+    end
+    
+    Sitemap.instance.map_args.each_pair do |the_controller, the_args|
+      Sitemap.instance.set_sitemap(the_controller, the_args)
+    end    
+          
     Sitemap.instance.mapped_actions.each_value do |val|
       @actions += val
     end
+
   end
   
   private
