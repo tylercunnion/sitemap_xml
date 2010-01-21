@@ -66,9 +66,9 @@ class Sitemap
       #logger.debug "Options-Dynamic: " + options[:dynamic].inspect
       #logger.debug "Class of above: " + options[:dynamic].class.inspect
       case options[:dynamic]
-        when Array:
+        when Array then
           dynamics += options[:dynamic]
-        when Hash, String, Symbol:
+        when Hash, String, Symbol then
           dynamics << options[:dynamic]
       end
 
