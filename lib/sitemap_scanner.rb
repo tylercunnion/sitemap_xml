@@ -20,9 +20,9 @@ class SitemapScanner
 
   def scan(action_definition)
   	case action_definition
-  	  when Hash: gathered_actions = hash_scan(action_definition)
-  	  when String: gathered_actions = string_scan(action_definition)
-  	  when Symbol: gathered_actions = string_scan(action_definition.to_s)
+  	  when Hash then gathered_actions = hash_scan(action_definition)
+  	  when String then gathered_actions = string_scan(action_definition)
+  	  when Symbol then gathered_actions = string_scan(action_definition.to_s)
   	end
   	return gathered_actions
 
